@@ -89,12 +89,24 @@ def AddHotel():
 def DebugPrintAll():
     print(hotels)
 
-
 def SearchHotelById():
-    print("Search by id")
+    searchId = int(input("Give the id to search: "))
+    for hotel in hotels:
+        if hotel.id == searchId:
+            print(hotel)
+            return
+    print("The id doesn't exist")
 
 def SearchReservationsBySurname():
-    print("Search reservations")
+    results = 0
+    searchName = input("Give name to search: ")
+    for hotel in hotels:
+        for reservation in hotel.reservations:
+            if reservation.name.lower() == searchName.lower():
+                print(reservation)
+                results += 1
+    if results == 0:
+        print("No entries found.")
 
 
 # Main
