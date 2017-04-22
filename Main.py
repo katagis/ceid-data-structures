@@ -37,8 +37,23 @@ class Reservation:
 def LoadFromFile():
     f = open(filename, "r")
     print("Reading File: ")
-    print(f.read())
+    #print(f.read())
 
+    f.readline() #skip number of hotels
+    for inputline in f:
+        values = inputline.split(";")
+
+        appendedHotel = Hotel(int(values[0]), values[1], int(values[2]), int(values[3]))
+        reservationCount = round((len(values) - 4) / 3)
+
+        for i in range(0,reservationCount): # find a python way to do this
+            Index = i*3 + 4
+            appendedHotel.reservations.append(Reservation(
+                values[Index],
+                datetime.datetime.strptime(values[Index+1], "%Y-%m-%d %H:%M:%S"),
+                int(values[Index+2])
+            ))
+        hotels.append(appendedHotel)
 
 def SaveToFile():
     f = open(filename, "w")
@@ -64,7 +79,7 @@ def AddHotel():
         duration = int(input("Duration Days: "))
         addedHotel.reservations.append(Reservation(
             name,
-            datetime.date( year, month, day),
+            datetime.datetime( year, month, day),
             duration
         ))
         answer = input("Add another reservation? (y/n) ")
@@ -83,9 +98,6 @@ def SearchReservationsBySurname():
 
 
 # Main
-
-
-
 
 # Menu
 answer = True
