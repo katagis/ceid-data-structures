@@ -3,7 +3,6 @@ import datetime
 import math
 
 
-
 class Hotel:
     def __init__(self, id, name, stars, numberOfRooms):
         self.id = id
@@ -19,10 +18,12 @@ class Hotel:
         return text
 
     def __str__(self):
-        text = str(self.id) + " - '" + self.name + "' with " + str(self.stars) + " Star(s) and " + str(self.numberOfRooms) + " Room(s)\n"
+        text = str(self.id) + " - '" + self.name + "' with " + str(self.stars) + " Star(s) and " + str(
+            self.numberOfRooms) + " Room(s)\n"
         for reservation in self.reservations:
             text += "\t" + str(reservation) + "\n"
         return text
+
 
 class Reservation:
     def __init__(self, name, checkinDate, stayDurationDays):
@@ -34,7 +35,8 @@ class Reservation:
         return self.name + ";" + str(self.checkinDate) + ";" + str(self.stayDurationDays) + ";"
 
     def __str__(self):
-        return "Surname: '" + self.name + "' Date: " + str(self.checkinDate) + " Stay: " + str(self.stayDurationDays) + " Days"
+        return "Surname: '" + self.name + "' Date: " + str(self.checkinDate) + " Stay: " + str(
+            self.stayDurationDays) + " Days"
 
 
 #######################
@@ -46,6 +48,7 @@ def LinearSearchHotels(searchId):
         if hotel.id == searchId:
             return hotel
     return None
+
 
 ## Search by surname
 def LinearSearchBySurname(searchName):
@@ -64,7 +67,7 @@ def LinearSearchBySurname(searchName):
 def BinarySearchSortList():
     global hotelsNeedSort
     if hotelsNeedSort == True:
-        hotels.sort(key=lambda hotel:hotel.id)
+        hotels.sort(key=lambda hotel: hotel.id)
         hotelsNeedSort = False
 
 
@@ -102,12 +105,14 @@ def BinarySearchList(searchid):
 ############
 TRIE_MAX_CHAR = 128
 
+
 def strToIndex(Key):
     return [ord(i) % TRIE_MAX_CHAR for i in list(Key)]
 
+
 class Trie:
     def __init__(self):
-        self.root = TrieNode(None, None, isRoot = True)
+        self.root = TrieNode(None, None, isRoot=True)
 
     def followPath(self, Key):
         Keys = strToIndex(Key)
@@ -115,7 +120,7 @@ class Trie:
         for i, x in enumerate(Keys):
             child = parent.getChild(x)
             if i == len(Keys) - 1:
-                #last element returns list if exists or None
+                # last element returns list if exists or None
                 if child != None:
                     return child.getData()
                 else:
@@ -134,7 +139,7 @@ class Trie:
                 # Adding data to final node
                 AddCreateNode(x, parent, DataToAdd)
             elif child != None:
-               parent = child
+                parent = child
             else:
                 parent = TrieNode(x, parent)
 
@@ -144,15 +149,17 @@ class Trie:
     def getKey(self, Key):
         return self.followPath(Key)
 
+
 def AddCreateNode(element, parent, Data):
     if parent.child[element] != None:
-        #add data
+        # add data
         parent.child[element].addData(Data)
     else:
-        TrieNode(element, parent, setData = Data)
+        TrieNode(element, parent, setData=Data)
+
 
 class TrieNode:
-    def __init__(self, element, parent, isRoot = False, setData = None):
+    def __init__(self, element, parent, isRoot=False, setData=None):
         if isRoot == False:
             parent.child[element] = self
         self.child = [None] * TRIE_MAX_CHAR
@@ -179,6 +186,7 @@ def getAVLHeight(Node):
         return 0
     return Node.height
 
+
 def AVLInsert(Node, Data):
     if Node == None:
         return AVLNode(Data)
@@ -187,7 +195,7 @@ def AVLInsert(Node, Data):
         Node.left = AVLInsert(Node.left, Data)
     elif Data.id > Node.data.id:
         Node.right = AVLInsert(Node.right, Data)
-    else: #equal
+    else:  # equal
         print("Error. Equal Data")
 
     Node.height = max(getAVLHeight(Node.left), getAVLHeight(Node.right)) + 1
@@ -208,6 +216,7 @@ def AVLInsert(Node, Data):
         return Node.rotateLeft()
 
     return Node
+
 
 def AVLSearch(Node, Id):
     counts = 0
@@ -258,8 +267,6 @@ class AVLNode:
         return oldleft
 
 
-
-
 ### GLOBALS  ###
 filename = "hotels.csv"
 hotels = []
@@ -267,18 +274,22 @@ hotelsNeedSort = True
 trie = Trie()
 avlRoot = None
 
-
-
 #####################
 ### MENU HANDLERS ###
 #####################
 
 def LoadFromFile():
-    hotels.clear()
+
     global avlRoot
 
-    f = open(filename, "r")
+    try:
+        f = open(filename, "r")
+    except FileNotFoundError:
+        print("File does not exist. Please save first or change the file.")
+        return
 
+
+    hotels.clear()
     f.readline()  # skip number of hotels
     for inputline in f:
         values = inputline.split(";")
@@ -290,7 +301,7 @@ def LoadFromFile():
             Index = i * 3 + 4
             appendedHotel.reservations.append(Reservation(
                 values[Index],
-                datetime.datetime.strptime(values[Index + 1], "%Y-%m-%d %H:%M:%S"),
+                datetime.datetime.strptime(values[Index + 1], "%Y-%m-%d").date(),
                 int(values[Index + 2])
             ))
             trie.addKey(values[Index], appendedHotel)
@@ -298,10 +309,11 @@ def LoadFromFile():
         hotels.append(appendedHotel)
 
         avlRoot = AVLInsert(avlRoot, appendedHotel)
-    global hotelsNeedSort
-    hotelsNeedSort = True
+
     print("Imported file: " + filename)
     print("Current hotels: " + str(hotels.__len__()))
+
+
 
 def SaveToFile():
     f = open(filename, "w")
@@ -309,7 +321,10 @@ def SaveToFile():
 
     print(str(numOfHotels), file=f)
     for hotel in hotels:
-        print(hotel, file=f)
+        print(repr(hotel), file=f)
+    global fileIsOpen
+    fileIsOpen = True
+
 
 def AddHotel():
     id = int(input("Give Hotel ID: "))
@@ -327,7 +342,7 @@ def AddHotel():
         trie.addKey(name, addedHotel)
         addedHotel.reservations.append(Reservation(
             name,
-            datetime.datetime(year, month, day),
+            datetime.datetime(year, month, day).date(),
             duration
         ))
         answer = input("Add another reservation? (y/n) ")
@@ -339,9 +354,11 @@ def AddHotel():
     global hotelsNeedSort
     hotelsNeedSort = True
 
+
 def DebugPrintAll():
     for hotel in hotels:
         print(hotel)
+
 
 def SearchHotelById():
     searchId = int(input("Give the id to search: "))
@@ -368,6 +385,7 @@ def SearchHotelById():
     print("Hotel Found: ")
     print(found)
 
+
 def SearchReservationsBySurname():
     # The two modes return two different kind of lists because that was requested
 
@@ -390,6 +408,15 @@ def SearchReservationsBySurname():
 
 # Main
 
+# File selection
+if len(sys.argv) == 2:
+    filename = sys.argv[1]
+else:
+    print("Using default file: " + filename)
+
+LoadFromFile()
+
+
 # Menu
 answer = True
 while answer:
@@ -402,6 +429,8 @@ while answer:
     5. Display Reservations by surname search
     6. Exit
     10. Print All Data
+    11. Change File
+    12. Save as
     """)
     print(60 * "*")
     answer = int(input("Select option: "))
@@ -419,5 +448,14 @@ while answer:
         SearchReservationsBySurname()
     elif answer == 6:
         answer = False
+    elif answer == 11:
+        confirm = input("Any unsaved changes may be lost. Please confirm (y/n): ")
+        if confirm == "y":
+            hotels=[]
+            filename = input("Give filename: ")
+            LoadFromFile()
+    elif answer == 12:
+        filename = input("Give filename to save as: ")
+        SaveToFile()
     else:
         print("Invalid Option")
