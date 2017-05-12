@@ -2,7 +2,6 @@ import sys
 import datetime
 import math
 
-
 class Hotel:
     def __init__(self, id, name, stars, numberOfRooms):
         self.id = id
@@ -32,7 +31,7 @@ class Reservation:
         self.stayDurationDays = stayDurationDays
 
     def __repr__(self):
-        return self.name + ";" + str(self.checkinDate) + ";" + str(self.stayDurationDays) + ";"
+        return self.name + ";" + str(self.checkinDate.strftime("%d/%m/%Y")) + ";" + str(self.stayDurationDays) + ";"
 
     def __str__(self):
         return "Surname: '" + self.name + "' Date: " + str(self.checkinDate) + " Stay: " + str(
@@ -103,16 +102,18 @@ def BinarySearchList(searchid):
 ############
 ### TRIE ###
 ############
-TRIE_MAX_CHAR = 128
+TRIE_MAX_CHAR = 256
 
 
 def strToIndex(Key):
+    Key.encode("ascii", "ignore")
     return [ord(i) % TRIE_MAX_CHAR for i in list(Key)]
 
 
 class Trie:
     def __init__(self):
         self.root = TrieNode(None, None, isRoot=True)
+        self.nodes = 0
 
     def followPath(self, Key):
         Keys = strToIndex(Key)
@@ -138,15 +139,18 @@ class Trie:
             if i == len(Keys) - 1:
                 # Adding data to final node
                 AddCreateNode(x, parent, DataToAdd)
+                self.nodes += 1
             elif child != None:
                 parent = child
             else:
+                self.nodes += 1
                 parent = TrieNode(x, parent)
 
     def addKey(self, Key, Data):
         self.followCreatePath(Key, Data)
 
     def getKey(self, Key):
+        print("Trie Node Count: " + str(self.nodes))
         return self.followPath(Key)
 
 
@@ -195,8 +199,8 @@ def AVLInsert(Node, Data):
         Node.left = AVLInsert(Node.left, Data)
     elif Data.id > Node.data.id:
         Node.right = AVLInsert(Node.right, Data)
-    else:  # equal
-        print("Error. Equal Data")
+    else:
+        print("Error. Equal Data. ID: " + str(Data.id) + " exists already as: " + str(Node.data))
 
     Node.height = max(getAVLHeight(Node.left), getAVLHeight(Node.right)) + 1
 
@@ -280,16 +284,21 @@ avlRoot = None
 
 def LoadFromFile():
 
-    global avlRoot
 
     try:
-        f = open(filename, "r")
+        f = open(filename, "r", encoding="latin1")
     except FileNotFoundError:
         print("File does not exist. Please save first or change the file.")
         return
 
+    global trie
+    global avlRoot
+    global hotels
 
     hotels.clear()
+    trie = Trie()
+    avlRoot = None
+
     f.readline()  # skip number of hotels
     for inputline in f:
         values = inputline.split(";")
@@ -301,7 +310,7 @@ def LoadFromFile():
             Index = i * 3 + 4
             appendedHotel.reservations.append(Reservation(
                 values[Index],
-                datetime.datetime.strptime(values[Index + 1], "%Y-%m-%d").date(),
+                datetime.datetime.strptime(values[Index + 1], "%d/%m/%Y").date(),
                 int(values[Index + 2])
             ))
             trie.addKey(values[Index], appendedHotel)
@@ -309,7 +318,8 @@ def LoadFromFile():
         hotels.append(appendedHotel)
 
         avlRoot = AVLInsert(avlRoot, appendedHotel)
-
+    global hotelsNeedSort
+    hotelsNeedSort = True
     print("Imported file: " + filename)
     print("Current hotels: " + str(hotels.__len__()))
 
