@@ -1,6 +1,10 @@
 import sys
 import datetime
 import math
+import timeit
+import random
+
+totalNames = 0
 
 class Hotel:
     def __init__(self, id, name, stars, numberOfRooms):
@@ -29,6 +33,8 @@ class Reservation:
         self.name = name
         self.checkinDate = checkinDate
         self.stayDurationDays = stayDurationDays
+        global totalNames
+        totalNames += 1
 
     def __repr__(self):
         return self.name + ";" + str(self.checkinDate.strftime("%d/%m/%Y")) + ";" + str(self.stayDurationDays) + ";"
@@ -150,7 +156,6 @@ class Trie:
         self.followCreatePath(Key, Data)
 
     def getKey(self, Key):
-        print("Trie Node Count: " + str(self.nodes))
         return self.followPath(Key)
 
 
@@ -226,15 +231,13 @@ def AVLSearch(Node, Id):
     counts = 0
     while Node != None:
         if Node.data.id == Id:
-            print("Found data " + str(Id) + " in " + str(counts))
             return Node
         elif Node.data.id < Id:
             Node = Node.right
         else:
             Node = Node.left
         counts += 1
-    print("Data not found, counts: " + str(counts))
-
+    return None
 
 class AVLNode:
     def __init__(self, data):
@@ -272,11 +275,69 @@ class AVLNode:
 
 
 ### GLOBALS  ###
-filename = "hotels.csv"
+filename = "data.csv"
 hotels = []
 hotelsNeedSort = True
 trie = Trie()
 avlRoot = None
+
+
+###########################
+### PERFORMANCE TESTING ###
+###########################
+def RunPerformanceTest():
+    repeats = 10000
+    nameRepeats = 2000
+
+    global avlRoot
+    global trie
+    global hotels
+
+    # Sort hotels (only if it needs to be done)
+    BinarySearchSortList()
+
+    idStart = hotels[0].id
+    idEnd = hotels[-1].id
+
+    idSearchList = [random.randrange(idStart, idEnd, 1) for _ in range(0,repeats)]
+
+    startingTime = timeit.default_timer()
+    for id in idSearchList:
+        LinearSearchHotels(id)
+    linearSearchTime = timeit.default_timer() - startingTime
+
+    startingTime = timeit.default_timer()
+    for id in idSearchList:
+        BinarySearchList(id)
+    binarySearchTime = timeit.default_timer() - startingTime
+
+    for id in idSearchList:
+        AVLSearch(avlRoot, id)
+    avlSearchTime = timeit.default_timer() - startingTime
+
+    # Create name search list
+    nameSearchList = [random.choice(random.choice(hotels).reservations).name for _ in range(0,nameRepeats)]
+
+    startingTime = timeit.default_timer()
+    for name in nameSearchList:
+        LinearSearchBySurname(name)
+    linearNameSearchTime = timeit.default_timer() - startingTime
+
+    startingTime = timeit.default_timer()
+    for name in nameSearchList:
+        trie.getKey(name)
+    trieSearchTime = timeit.default_timer() - startingTime
+
+    print("\nID searches: " + str(repeats))
+    print("Linear ID total time: " + str(linearSearchTime) + " s Avg. Case: " + str(linearSearchTime/repeats))
+    print("Binary ID total time: " + str(binarySearchTime) + " s Avg. Case: " + str(binarySearchTime / repeats))
+    print("AVL tree  total time: " + str(avlSearchTime) + " s, Avg. Case: " + str(avlSearchTime/ repeats))
+
+    print("\nName Searches: " + str(nameRepeats))
+    print("Linear Name Search total: " + str(linearNameSearchTime) + " s, Avg. Case: " + str(linearNameSearchTime/nameRepeats))
+    print("Trie Search total: " + str(trieSearchTime) + " s, Avg. Case: " + str(trieSearchTime/nameRepeats))
+
+    print("Exportable: " + str(linearSearchTime) + " " + str(binarySearchTime) + " " +str(avlSearchTime) + " | " + str(linearNameSearchTime) + " " + str(trieSearchTime))
 
 #####################
 ### MENU HANDLERS ###
@@ -322,7 +383,8 @@ def LoadFromFile():
     hotelsNeedSort = True
     print("Imported file: " + filename)
     print("Current hotels: " + str(hotels.__len__()))
-
+    global totalNames
+    print("Current names: " + str(totalNames))
 
 
 def SaveToFile():
@@ -387,11 +449,12 @@ def SearchHotelById():
         BinarySearchSortList()
         found = BinarySearchList(searchId)
     else:
-        found = AVLSearch(avlRoot, searchId).data
+        found = AVLSearch(avlRoot, searchId)
+        if found == None:
+            print("The id does not exist")
+            return
+        found = found.data
 
-    if found == None:
-        print("The id does not exist")
-        return
     print("Hotel Found: ")
     print(found)
 
@@ -441,6 +504,7 @@ while answer:
     10. Print All Data
     11. Change File
     12. Save as
+    13. Run Performance Test
     """)
     print(60 * "*")
     answer = int(input("Select option: "))
@@ -467,5 +531,11 @@ while answer:
     elif answer == 12:
         filename = input("Give filename to save as: ")
         SaveToFile()
+    elif answer == 13:
+        print("The program may not respond for some time depending on the number of tests.")
+        for i in range(1, 11):
+            print(10*"=" + " TEST: " + str(i) + " " + 10*"=")
+            RunPerformanceTest()
+            print()
     else:
         print("Invalid Option")
